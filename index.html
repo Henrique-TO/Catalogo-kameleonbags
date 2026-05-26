@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo de Malas por Nicho — Kameleon Bags</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght=0,300;0,400;0,500;1,300&display=swap');
+
+  :root {
+    --verde: #00c96e;
+    --verde-escuro: #007a42;
+    --preto: #0a0a0a;
+    --cinza: #1a1a1a;
+    --cinza-medio: #2a2a2a;
+    --texto: #e8e8e8;
+    --texto-muted: #888;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--preto);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--preto) 0%, #0d1f15 100%);
+    border-bottom: 2px solid var(--verde);
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .logo span { color: var(--verde); }
+
+  .header-tag {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--verde);
+    background: rgba(0,201,110,0.1);
+    border: 1px solid rgba(0,201,110,0.3);
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: var(--cinza);
+    padding: 16px 48px;
+    display: flex;
+    gap: 48px;
+    border-bottom: 1px solid #333;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--verde);
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--texto-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* MAIN LAYOUT */
+  .container {
+    display: flex;
+    min-height: calc(100vh - 130px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    background: var(--cinza);
+    border-right: 1px solid #333;
+    padding: 24px 0;
+    position: sticky;
+    top: 80px;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+
+  .sidebar-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--texto-muted);
+    padding: 0 20px 16px;
+  }
+
+  .nicho-btn {
+    width: 100%;
+    padding: 14px 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--texto);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    text-align: left;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .nicho-btn:hover {
+    background: rgba(0,201,110,0.08);
+    border-left-color: var(--verde);
+  }
+  .nicho-btn.ativo {
+    background: rgba(0,201,110,0.12);
+    border-left-color: var(--verde);
+    color: #fff;
+    font-weight: 500;
+  }
+  .nicho-icon { font-size: 18px; width: 24px; text-align: center; }
+  .nicho-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--texto-muted);
+    background: #333;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .nicho-btn.ativo .nicho-count {
+    background: var(--verde);
+    color: #000;
+  }
+
+  /* CONTENT */
+  .content {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+
+  .content-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .nicho-titulo {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .nicho-titulo span { color: var(--verde); }
+
+  .nicho-desc {
+    font-size: 14px;
+    color: var(--texto-muted);
+    margin-top: 8px;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+
+  /* ADMIN ACTIONS */
+  .btn-add {
+    background: var(--verde);
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    display: none; /* Exibido apenas em modo admin */
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .btn-add:hover { background: #00a85c; transform: translateY(-1px); }
+
+  .btn-delete {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: #rgba(255, 0, 0, 0.2);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    display: none;
+    transition: all 0.2s;
+    z-index: 10;
+  }
+  .btn-delete:hover {
+    background: #ff4444;
+    color: #fff;
+  }
+
+  body.admin-mode .btn-add,
+  body.admin-mode .btn-delete,
+  body.admin-mode .card-add {
+    display: flex !important;
+  }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--cinza);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #333;
+    transition: all 0.25s;
+    cursor: pointer;
+    position: relative;
+  }
+  .card:hover {
+    border-color: var(--verde);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,201,110,0.15);
+  }
+
+  .card-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    object-position: center;
+    background: #111;
+    display: block;
+  }
+
+  .card-body {
+    padding: 16px;
+    position: relative;
+  }
+
+  .card-empresa {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    padding-right: 60px; /* Evita sobreposição do botão delete */
+  }
+
+  .card-meta {
+    font-size: 12px;
+    color: var(--texto-muted);
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .tag-modelo { background: rgba(0,201,110,0.15); color: var(--verde); }
+  .tag-estilo { background: rgba(255,255,255,0.08); color: #aaa; }
+  .tag-destaque { background: rgba(255,200,0,0.15); color: #ffc800; }
+
+  .card-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(4px);
+    color: var(--verde);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,201,110,0.4);
+    text-transform: uppercase;
+    z-index: 5;
+  }
+
+  /* EMPTY STATE */
+  .empty-nicho {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--texto-muted);
+  }
+  .empty-nicho .icon { font-size: 64px; margin-bottom: 16px; }
+  .empty-nicho h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    color: #555;
+    margin-bottom: 8px;
+  }
+  .empty-nicho p { font-size: 14px; line-height: 1.6; }
+
+  /* ADD CARD */
+  .card-add {
+    background: transparent;
+    border: 2px dashed #333;
+    border-radius: 12px;
+    height: 320px;
+    display: none; /* Exibido apenas em modo admin */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    gap: 12px;
+    transition: all 0.2s;
+    color: var(--texto-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+  }
+  .card-add:hover {
+    border-color: var(--verde);
+    color: var(--verde);
+    background: rgba(0,201,110,0.04);
+  }
+  .card-add-icon { font-size: 40px; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.aberto { display: flex; }
+  .modal {
+    background: var(--cinza);
+    border: 1px solid #444;
+    border-radius: 16px;
+    width: 520px;
+    max-width: 95vw;
+    padding: 32px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    margin-bottom: 24px;
+    color: #fff;
+  }
+  .modal label {
+    display: block;
+    font-size: 12px;
+    color: var(--texto-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .modal input, .modal select, .modal textarea {
+    width: 100%;
+    background: #111;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #fff;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .modal input:focus, .modal select:focus {
+    border-color: var(--verde);
+  }
+  .modal-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .btn-cancelar {
+    background: #333;
+    color: #ccc;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+  }
+
+  /* LIGHTBOX */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .lightbox.aberto { display: flex; }
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  .lightbox-info {
+    text-align: center;
+    color: #fff;
+  }
+  .lightbox-info h3 { font-family: 'Syne', sans-serif; font-size: 20px; }
+  .lightbox-info p { color: var(--texto-muted); font-size: 14px; }
+  .lightbox-close {
+    position: absolute;
+    top: 24px; right: 32px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+  .lightbox-close:hover { opacity: 1; }
+
+  /* UPLOAD AREA */
+  .upload-area {
+    border: 2px dashed #444;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: all 0.2s;
+    position: relative;
+    background: #111;
+  }
+  .upload-area:hover { border-color: var(--verde); }
+  .upload-area p { font-size: 13px; color: #888; margin-top: 8px; }
+  .upload-preview {
+    max-width: 100%;
+    max-height: 150px;
+    object-fit: contain;
+    border-radius: 6px;
+    display: none;
+    margin: 0 auto;
+  }
+  
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    header { padding: 16px 20px; }
+    .stats-bar { padding: 12px 20px; gap: 24px; }
+    .content { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="verificarAdmin()">kame<span>leon</span> bags</div>
+  <div class="header-tag" id="status-tag">📁 Catálogo</div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num" id="total-malas">—</div>
+    <div class="stat-label">Malas Cadastradas</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="total-nichos">10</div>
+    <div class="stat-label">Nichos</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="nichos-ativos">—</div>
+    <div class="stat-label">Com Exemplos</div>
+  </div>
+</div>
+
+<div class="container">
+  <nav class="sidebar">
+    <div class="sidebar-title">Nichos</div>
+    <button class="nicho-btn ativo" onclick="trocarNicho('todos')" data-nicho="todos">
+      <span class="nicho-icon">🗂️</span> Todos
+      <span class="nicho-count" id="count-todos">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('financeiro')" data-nicho="financeiro">
+      <span class="nicho-icon">🏦</span> Financeiro / Bancos
+      <span class="nicho-count" id="count-financeiro">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('pharma')" data-nicho="pharma">
+      <span class="nicho-icon">💊</span> Pharma / Saúde
+      <span class="nicho-count" id="count-pharma">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('alimentos')" data-nicho="alimentos">
+      <span class="nicho-icon">🍔</span> Alimentos / Bebidas
+      <span class="nicho-count" id="count-alimentos">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('consultoria')" data-nicho="consultoria">
+      <span class="nicho-icon">📊</span> Consultoria / Serviços
+      <span class="nicho-count" id="count-consultoria">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('eventos')" data-nicho="eventos">
+      <span class="nicho-icon">🎪</span> Eventos / Entretenimento
+      <span class="nicho-count" id="count-eventos">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('esg')" data-nicho="esg">
+      <span class="nicho-icon">🌱</span> ESG / Sustentabilidade
+      <span class="nicho-count" id="count-esg">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('pet')" data-nicho="pet">
+      <span class="nicho-icon">🐾</span> Pet / Veterinário
+      <span class="nicho-count" id="count-pet">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('industria')" data-nicho="industria">
+      <span class="nicho-icon">🏭</span> Indústria / Varejo
+      <span class="nicho-count" id="count-industria">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('turismo')" data-nicho="turismo">
+      <span class="nicho-icon">✈️</span> Turismo / Viagem
+      <span class="nicho-count" id="count-turismo">0</span>
+    </button>
+    <button class="nicho-btn" onclick="trocarNicho('outros')" data-nicho="outros">
+      <span class="nicho-icon">📦</span> Outros
+      <span class="nicho-count" id="count-outros">0</span>
+    </button>
+  </nav>
+
+  <main class="content">
+    <div class="content-header">
+      <div>
+        <h2 class="nicho-titulo" id="titulo-nicho">Todas as <span>Malas</span></h2>
+        <p class="nicho-desc" id="desc-nicho">Portfólio completo de malas personalizadas Kameleon. Clique em um nicho para filtrar.</p>
+      </div>
+      <button class="btn-add" id="top-btn-add" onclick="abrirModal()">
+        ＋ Adicionar Mala
+      </button>
+    </div>
+
+    <div class="grid" id="grid-malas">
+      </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>➕ Adicionar Nova Mala</h2>
+    
+    <div class="upload-area" onclick="document.getElementById('file-input').click()" id="upload-area">
+      <div id="upload-icon" style="font-size:36px">📷</div>
+      <p id="upload-text">Clique para adicionar foto da mala</p>
+      <img id="upload-preview" class="upload-preview">
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
+    
+    <label>Empresa / Cliente</label>
+    <input type="text" id="m-empresa" placeholder="Ex: Deloitte, Coca-Cola...">
+    
+    <label>Nicho</label>
+    <select id="m-nicho">
+      <option value="financeiro">🏦 Financeiro / Bancos</option>
+      <option value="pharma">💊 Pharma / Saúde</option>
+      <option value="alimentos">🍔 Alimentos / Bebidas</option>
+      <option value="consultoria">📊 Consultoria / Serviços</option>
+      <option value="eventos">🎪 Eventos / Entretenimento</option>
+      <option value="esg">🌱 ESG / Sustentabilidade</option>
+      <option value="pet">🐾 Pet / Veterinário</option>
+      <option value="industria">🏭 Indústria / Varejo</option>
+      <option value="turismo">✈️ Turismo / Viagem</option>
+      <option value="outros">📦 Outros</option>
+    </select>
+    
+    <label>Modelo da Mala</label>
+    <select id="m-modelo">
+      <option value="Mala P 20&quot;">Mala P 20&quot; — 10kg</option>
+      <option value="Mala PP 18&quot;">Mala PP 18&quot; — 8kg</option>
+      <option value="Mala M 24&quot;">Mala M 24&quot; — 23kg</option>
+      <option value="Mala G 28&quot;">Mala G 28&quot; — 32kg</option>
+      <option value="Mochila G/Executiva">Mochila G / Executiva</option>
+      <option value="Shoulder P">Shoulder P</option>
+      <option value="Shoulder G">Shoulder G</option>
+    </select>
+    
+    <label>Estilo (opcional)</label>
+    <input type="text" id="m-estilo" placeholder="Ex: Monocromática, Degradê, Pattern...">
+
+    <label>Destaque / Tag Extra (opcional)</label>
+    <input type="text" id="m-destaque" placeholder="Ex: Grande Conta, ESG Premium...">
+    
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-add" id="btn-submit-mala" style="display:block !important;" onclick="salvarMala()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="fecharLightbox(event)">
+  <button class="lightbox-close" onclick="fecharLightbox(event)">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lightbox-info">
+    <h3 id="lb-empresa"></h3>
+    <p id="lb-meta"></p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURAÇÃO DO SUPABASE
+// ============================================================
+const SUPABASE_URL = "https://orzbhvpskxrjctlwpfwk.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yemJodnBza3hyamN0bHdwZndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzQ5MjIsImV4cCI6MjA5NTM1MDkyMn0.JCmyx8Tzh1YfGmgiL40__Q-EGvdHz3Fd2xSUgLL5CgY";
+
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const NICHOS_INFO = {
+  todos:       { titulo: 'Todas as', dest: 'Malas', desc: 'Portfólio completo de malas personalizadas Kameleon. Clique em um nicho para filtrar.' },
+  financeiro:  { titulo: 'Financeiro', dest: '/ Bancos', desc: 'Malas para bancos, fintechs, seguradoras e serviços financeiros. Destaque em ações de incentivo, onboarding e convenções.' },
+  pharma:      { titulo: 'Pharma', dest: '/ Saúde', desc: 'Malas para laboratórios, distribuidoras veterinárias e indústria farmacêutica. Ideal para prêmios, congressos e kits de visita.' },
+  alimentos:   { titulo: 'Alimentos', dest: '/ Bebidas', desc: 'Malas para marcas do setor alimentício e de bebidas. Ações promocionais, brindes e campanhas de incentivo.' },
+  consultoria: { titulo: 'Consultoria', dest: '/ Serviços', desc: 'Malas para consultorias, auditorias e empresas de serviços B2B. Brinde executivo premium para clientes e colaboradores.' },
+  eventos:     { titulo: 'Eventos', dest: '/ Entretenimento', desc: 'Malas para shows, eventos corporativos e ações de entretenimento. Impacto visual máximo.' },
+  esg:         { titulo: 'ESG', dest: '/ Sustentabilidade', desc: 'Malas para empresas com pauta ESG. Material 100% reciclado — cada mala usa 48 garrafas PET. Argumento de venda poderoso.' },
+  pet:         { titulo: 'Pet', dest: '/ Veterinário', desc: 'Malas para petshops, distribuidoras veterinárias e marcas do setor pet. Personalização com mascotes e identidade da marca.' },
+  industria:   { titulo: 'Indústria', dest: '/ Varejo', desc: 'Malas para indústria, varejo e distribuição. Kits de franqueados, ações comerciais e brindes de alta percepção de valor.' },
+  turismo:     { titulo: 'Turismo', dest: '/ Viagem', desc: 'Malas para agências de turismo, companhias aéreas e hotéis. Produto com fit perfeito para o setor.' },
+  outros:      { titulo: 'Outros', dest: 'Nichos', desc: 'Malas diversas não categorizadas. Adicione ao nicho correto para facilitar as apresentações.' }
+};
+
+let malas = [];
+let nichoAtual = 'todos';
+let arquivoSelecionado = null;
+let isAdmin = false;
+
+// ============================================================
+// CARREGAMENTO DE DADOS (SUPABASE)
+// ============================================================
+async function carregarMalas() {
+  try {
+    const { data, error } = await _supabase
+      .from('malas')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    malas = data;
+    renderGrid(nichoAtual);
+    atualizarContadores();
+  } catch (err) {
+    console.error("Erro ao buscar dados do Supabase:", err.message);
+  }
+}
+
+// ============================================================
+// RENDERIZAÇÃO DO LAYOUT
+// ============================================================
+function getMalasDoNicho(nicho) {
+  if (nicho === 'todos') return malas;
+  return malas.filter(m => m.nicho === nicho);
+}
+
+function renderGrid(nicho) {
+  const grid = document.getElementById('grid-malas');
+  const lista = getMalasDoNicho(nicho);
+  
+  let html = '';
+  
+  lista.forEach(m => {
+    const badgeHtml = m.destaque ? `<div class="card-badge">${m.destaque}</div>` : '';
+    const imgHtml = m.img_url 
+      ? `<img class="card-img" src="${m.img_url}" alt="${m.empresa}" onclick="abrirLightbox('${m.id}')">`
+      : `<div class="card-img-placeholder" onclick="abrirLightbox('${m.id}')">🖼️</div>`;
+    
+    html += `
+      <div class="card" data-id="${m.id}">
+        ${badgeHtml}
+        ${imgHtml}
+        <div class="card-body">
+          <div class="card-empresa">${m.empresa}</div>
+          <div class="card-meta">
+            <span>${getNichoEmoji(m.nicho)} ${getNichoNome(m.nicho)}</span>
+          </div>
+          <div class="card-tags">
+            <span class="tag tag-modelo">${m.modelo}</span>
+            ${m.estilo ? `<span class="tag tag-estilo">${m.estilo}</span>` : ''}
+          </div>
+          <button class="btn-delete" onclick="deletarMala('${m.id}', event)">Excluir</button>
+        </div>
+      </div>`;
+  });
+
+  html += `
+    <div class="card-add" onclick="abrirModal()">
+      <div class="card-add-icon">＋</div>
+      <div>Adicionar mala neste nicho</div>
+    </div>`;
+
+  if (lista.length === 0 && !isAdmin) {
+    grid.innerHTML = `
+      <div class="empty-nicho">
+        <div class="icon">${NICHOS_INFO[nicho] ? '📂' : '📦'}</div>
+        <h3>Nenhuma mala cadastrada neste nicho ainda</h3>
+        <p>Em breve novidades do portfólio Kameleon para este segmento!</p>
+      </div>`;
+    return;
+  }
+  
+  grid.innerHTML = html;
+}
+
+function getNichoEmoji(nicho) {
+  const map = { financeiro:'🏦', pharma:'💊', alimentos:'🍔', consultoria:'📊', eventos:'🎪', esg:'🌱', pet:'🐾', industria:'🏭', turismo:'✈️', outros:'📦' };
+  return map[nicho] || '📦';
+}
+
+function getNichoNome(nicho) {
+  const map = { financeiro:'Financeiro', pharma:'Pharma', alimentos:'Alimentos', consultoria:'Consultoria', eventos:'Eventos', esg:'ESG', pet:'Pet', industria:'Indústria', turismo:'Turismo', outros:'Outros' };
+  return map[nicho] || nicho;
+}
+
+function atualizarContadores() {
+  const nichos = ['todos','financeiro','pharma','alimentos','consultoria','eventos','esg','pet','industria','turismo','outros'];
+  nichos.forEach(n => {
+    const c = document.getElementById('count-' + n);
+    if (c) c.textContent = getMalasDoNicho(n).length;
+  });
+  document.getElementById('total-malas').textContent = malas.length;
+  const comExemplos = nichos.filter(n => n !== 'todos' && getMalasDoNicho(n).length > 0).length;
+  document.getElementById('nichos-ativos').textContent = comExemplos;
+}
+
+function trocarNicho(nicho) {
+  nichoAtual = nicho;
+  document.querySelectorAll('.nicho-btn').forEach(b => {
+    b.classList.toggle('ativo', b.dataset.nicho === nicho);
+  });
+  const info = NICHOS_INFO[nicho];
+  if (info) {
+    document.getElementById('titulo-nicho').innerHTML = `${info.titulo} <span>${info.dest}</span>`;
+    document.getElementById('desc-nicho').textContent = info.desc;
+  }
+  renderGrid(nicho);
+}
+
+// ============================================================
+// SISTEMA OPERACIONAL E ENVIO (CRUD)
+// ============================================================
+function previewFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  arquivoSelecionado = file;
+  
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('upload-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('upload-icon').style.display = 'none';
+    document.getElementById('upload-text').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function salvarMala() {
+  const empresa = document.getElementById('m-empresa').value.trim();
+  const nicho = document.getElementById('m-nicho').value;
+  const modelo = document.getElementById('m-modelo').value;
+  const estilo = document.getElementById('m-estilo').value.trim();
+  const destaque = document.getElementById('m-destaque').value.trim();
+  const btnSubmit = document.getElementById('btn-submit-mala');
+  
+  if (!empresa) { alert('Informe o nome da empresa!'); return; }
+  
+  try {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = "Salvando...";
+
+    let imgUrl = null;
+
+    // Se houver arquivo selecionado, faz upload no Storage do Supabase
+    if (arquivoSelecionado) {
+      const fileExt = arquivoSelecionado.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `fotos/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await _supabase.storage
+        .from('malas')
+        .upload(filePath, arquivoSelecionado);
+
+      if (uploadError) throw uploadError;
+
+      // Pegar a URL pública do objeto recém-criado
+      const { data: urlData } = _supabase.storage
+        .from('malas')
+        .getPublicUrl(filePath);
+        
+      imgUrl = urlData.publicUrl;
+    }
+
+    // Grava os dados estruturados na tabela
+    const { error: insertError } = await _supabase
+      .from('malas')
+      .insert([{
+        empresa,
+        nicho,
+        modelo,
+        estilo: estilo || null,
+        destaque: destaque || null,
+        img_url: imgUrl
+      }]);
+
+    if (insertError) throw insertError;
+
+    fecharModal();
+    await carregarMalas();
+    trocarNicho(nichoAtual === 'todos' ? nicho : nichoAtual);
+
+  } catch (err) {
+    alert("Erro ao salvar: " + err.message);
+  } finally {
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = "💾 Salvar";
+  }
+}
+
+async function deletarMala(id, event) {
+  event.stopPropagation(); // Evita abrir o lightbox ao clicar em apagar
+  if (!confirm("Tem certeza que deseja remover esta mala do portfólio?")) return;
+
+  try {
+    const malaAlvo = malas.find(m => m.id === id);
+    
+    // Deleta do Banco de Dados
+    const { error: dbError } = await _supabase
+      .from('malas')
+      .delete()
+      .eq('id', id);
+
+    if (dbError) throw dbError;
+
+    // Tenta limpar o arquivo correspondente do storage se houver img_url
+    if (malaAlvo && malaAlvo.img_url) {
+      const urlParts = malaAlvo.img_url.split('/storage/v1/object/public/malas/');
+      if (urlParts.length > 1) {
+        const filePath = urlParts[1];
+        await _supabase.storage.from('malas').remove([filePath]);
+      }
+    }
+
+    await carregarMalas();
+  } catch (err) {
+    alert("Erro ao excluir: " + err.message);
+  }
+}
+
+// ============================================================
+// MODAL CONTROLS
+// ============================================================
+function abrirModal() {
+  if (nichoAtual !== 'todos') {
+    document.getElementById('m-nicho').value = nichoAtual;
+  }
+  document.getElementById('modal').classList.add('aberto');
+}
+
+function fecharModal() {
+  document.getElementById('modal').classList.remove('aberto');
+  document.getElementById('m-empresa').value = '';
+  document.getElementById('m-estilo').value = '';
+  document.getElementById('m-destaque').value = '';
+  arquivoSelecionado = null;
+  document.getElementById('upload-preview').style.display = 'none';
+  document.getElementById('upload-icon').style.display = 'block';
+  document.getElementById('upload-text').style.display = 'block';
+  document.getElementById('file-input').value = '';
+}
+
+// ============================================================
+// LIGHTBOX CONTROLS
+// ============================================================
+function abrirLightbox(id) {
+  const m = malas.find(x => x.id === id);
+  if (!m) return;
+  const lb = document.getElementById('lightbox');
+  const imgEl = document.getElementById('lb-img');
+  
+  if (m.img_url) {
+    imgEl.src = m.img_url;
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.style.display = 'none';
+  }
+  
+  document.getElementById('lb-empresa').textContent = m.empresa;
+  document.getElementById('lb-meta').textContent = `${getNichoNome(m.nicho)} · ${m.modelo}${m.estilo ? ' · ' + m.estilo : ''}`;
+  lb.classList.add('aberto');
+}
+
+function fecharLightbox(e) {
+  if (e.target === e.currentTarget || e.target.classList.contains('lightbox-close')) {
+    document.getElementById('lightbox').classList.remove('aberto');
+  }
+}
+
+// ============================================================
+// CONTROLE PRIVADO (MODO ADMIN)
+// ============================================================
+function verificarAdmin() {
+  if (isAdmin) {
+    isAdmin = false;
+    document.body.classList.remove('admin-mode');
+    document.getElementById('status-tag').textContent = "📁 Catálogo";
+    renderGrid(nichoAtual);
+    return;
+  }
+
+  const pass = prompt("Digite a senha do administrador Kameleon para editar:");
+  if (pass === "Kameleon@2026") {
+    isAdmin = true;
+    document.body.classList.add('admin-mode');
+    document.getElementById('status-tag').textContent = "🛠️ Modo Admin Ativo";
+    renderGrid(nichoAtual);
+  } else if (pass !== null) {
+    alert("Senha incorreta.");
+  }
+}
+
+// Fechar com ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { fecharModal(); document.getElementById('lightbox').classList.remove('aberto'); }
+});
+
+// INITIALIZE
+carregarMalas();
+</script>
+</body>
+</html>
