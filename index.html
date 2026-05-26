@@ -570,7 +570,7 @@
     <div class="content-header">
       <div>
         <h2 class="nicho-titulo" id="titulo-nicho">Todas as <span>Malas</span></h2>
-        <p class="nicho-desc" id="desc-nicho">Portfólio completo de malas personalizadas Kameleon. Clique em um nicho para filtrar.</p>
+        <p class="nicho-desc" id="desc-nicho">Portfólio completo de malas personalizadas on. Clique em um nicho para filtrar.</p>
       </div>
       <button class="btn-add" id="top-btn-add" onclick="abrirModal()">
         ＋ Adicionar Mala
@@ -653,7 +653,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const NICHOS_INFO = {
-  todos:       { titulo: 'Todas as', dest: 'Malas', desc: 'Portfólio completo de malas personalizadas Kameleon. Clique em um nicho para filtrar.' },
+  todos:       { titulo: 'Todas as', dest: 'Malas', desc: 'Portfólio completo de malas personalizadas on. Clique em um nicho para filtrar.' },
   financeiro:  { titulo: 'Financeiro', dest: '/ Bancos', desc: 'Malas para bancos, fintechs, seguradoras e serviços financeiros. Destaque em ações de incentivo, onboarding e convenções.' },
   pharma:      { titulo: 'Pharma', dest: '/ Saúde', desc: 'Malas para laboratórios, distribuidoras veterinárias e indústria farmacêutica. Ideal para prêmios, congressos e kits de visita.' },
   alimentos:   { titulo: 'Alimentos', dest: '/ Bebidas', desc: 'Malas para marcas do setor alimentício e de bebidas. Ações promocionais, brindes e campanhas de incentivo.' },
@@ -739,7 +739,7 @@ function renderGrid(nicho) {
       <div class="empty-nicho">
         <div class="icon">${NICHOS_INFO[nicho] ? '📂' : '📦'}</div>
         <h3>Nenhuma mala cadastrada neste nicho ainda</h3>
-        <p>Em breve novidades do portfólio Kameleon para este segmento!</p>
+        <p>Em breve novidades do portfólio on para este segmento!</p>
       </div>`;
     return;
   }
@@ -953,8 +953,8 @@ function verificarAdmin() {
     return;
   }
 
-  const pass = prompt("Digite a senha do administrador Kameleon para editar:");
-  if (pass === "Kameleon@2026") {
+  const pass = prompt("Digite a senha do administrador on para editar:");
+  if (pass === "Klbags@2026") {
     isAdmin = true;
     document.body.classList.add('admin-mode');
     document.getElementById('status-tag').textContent = "🛠️ Modo Admin Ativo";
